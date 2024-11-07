@@ -13,6 +13,9 @@ import numpy as np
 from grid2op.Observation import BaseObservation
 from grid2op.Action import BaseAction
 from grid2op.gym_compat import GymEnv
+from grid2op.gym_compat.utils import GYM_VERSION
+
+from packaging import version
 
 
 class GymEnvWithHeuristics(GymEnv):
@@ -62,6 +65,7 @@ class GymEnvWithHeuristics(GymEnv):
             raise RuntimeError("Wrong argument for the reward_cumul parameters. "
                                f"You provided \"{self._reward_cumul}\" (possible "
                                f"values are {type(self).POSSIBLE_REWARD_CUMUL}).")
+        self.min_gym_version = version.parse("0.26.0")
             
     @abstractmethod
     def heuristic_actions(self,
@@ -261,13 +265,17 @@ class GymEnvWithHeuristics(GymEnv):
         gym_obs:
             The first open ai gym observation received by the agent
         """
-        if hasattr(type(self), "_gymnasium") and type(self)._gymnasium:
+        is_gymnasium = hasattr(type(self), "_gymnasium") and type(self)._gymnasium
+        if is_gymnasium:
             return_info = True
             
         done = True
         info = {}  # no extra information provided !
         while done:
-            super()._aux_reset(seed, return_info, options)  # reset the scenario
+            if is_gymnasium or GYM_VERSION >= self.min_gym_version:
+                super().reset(seed=seed, options=options) # reset the scenario
+            else:
+                super()._aux_reset(seed, return_info, options)  # reset the scenario
             g2op_obs = self.init_env.get_obs()  # retrieve the observation
             reward = self.init_env.reward_range[0]  # the reward at first step is always minimal
             
