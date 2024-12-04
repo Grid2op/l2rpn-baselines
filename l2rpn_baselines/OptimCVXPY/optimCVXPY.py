@@ -20,7 +20,15 @@ from grid2op.Action import ActionSpace, BaseAction
 from grid2op.Backend import PandaPowerBackend
 from grid2op.Observation import BaseObservation
 from lightsim2grid import LightSimBackend
-from lightsim2grid.gridmodel import init
+
+from importlib.metadata import version as version_str
+from packaging import version
+lightsim2grid_version = version.parse(version_str("lightsim2grid"))
+
+if lightsim2grid_version >= version.parse("0.9.1"):
+    from lightsim2grid.gridmodel import init_from_pandapower as init
+else:
+    from lightsim2grid.gridmodel import init
 
 import pdb
 
